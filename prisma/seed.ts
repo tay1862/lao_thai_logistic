@@ -1,16 +1,16 @@
 // import 'dotenv/config';
 // import bcrypt from 'bcryptjs';
 import { PrismaClient } from '@prisma/client';
-import { PrismaPg } from '@prisma/adapter-pg';
-import { Pool } from 'pg';
+// import { PrismaPg } from '@prisma/adapter-pg';
+// import { Pool } from 'pg';
 
 // Create PostgreSQL connection pool
-const connectionString = process.env.DATABASE_URL || 'postgresql://postgres@localhost:5432/thai_lao_logistics';
-const pool = new Pool({ connectionString });
+// const connectionString = process.env.DATABASE_URL || 'postgresql://postgres@localhost:5432/thai_lao_logistics';
+// const pool = new Pool({ connectionString });
 
 // Create Prisma client with PostgreSQL adapter
-const adapter = new PrismaPg(pool);
-const prisma = new PrismaClient({ adapter });
+// const adapter = new PrismaPg(pool);
+const prisma = new PrismaClient();
 
 // Define enum values manually for seeding
 const UserRole = {
