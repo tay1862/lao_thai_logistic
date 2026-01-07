@@ -1,5 +1,5 @@
 // import 'dotenv/config';
-import bcrypt from 'bcryptjs';
+// import bcrypt from 'bcryptjs';
 import { PrismaClient } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { Pool } from 'pg';
@@ -57,8 +57,10 @@ async function main() {
     await prisma.shipment.deleteMany();
     await prisma.user.deleteMany();
 
-    // Hash passwords
-    const hashedPassword = await bcrypt.hash('123', 10);
+    // import bcrypt from 'bcryptjs'; (Commented out)
+
+    // Hash passwords (Pre-hashed '123')
+    const hashedPassword = '$2b$10$YDWkL287.gGJ9pe8UVTdTOD4am4mgsM7mEoWEohCaWQsvCKHD5DcG';
 
     // Create Admin User
     const admin = await prisma.user.create({
