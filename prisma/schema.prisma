@@ -1,0 +1,174 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ============================================
+// Enums
+// ============================================
+
+enum UserRole {
+  STAFF
+  MANAGER
+  ADMIN
+}
+
+enum ShipmentDirection {
+  TH_TO_LA
+  LA_TO_TH
+}
+
+enum ShipmentStatus {
+  CREATED
+  RECEIVED_AT_ORIGIN
+  IN_TRANSIT
+  ARRIVED_AT_HUB
+  OUT_FOR_DELIVERY
+  READY_FOR_PICKUP
+  DELIVERED
+  FAILED
+  RETURNED
+}
+
+enum ParcelType {
+  DOCUMENT
+  PACKAGE
+  FRAGILE
+}
+
+enum CodStatus {
+  NONE
+  PENDING
+  COLLECTED
+  TRANSFERRED
+}
+
+enum LastMileMethod {
+  PICKUP
+  DELIVERY
+}
+
+enum Branch {
+  THAI
+  LAOS
+}
+
+// ============================================
+// Models
+// ============================================
+
+model User {
+  id        String   @id @default(cuid())
+  username  String   @unique
+  password  String
+  fullName  String
+  role      UserRole @default(STAFF)
+  branch    Branch   @default(LAOS)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  shipments Shipment[]
+  events    ShipmentEvent[]
+}
+
+model Shipment {
+  id              String            @id @default(cuid())
+  companyTracking String            @unique
+  thaiTracking    String?
+  direction       ShipmentDirection
+  currentStatus   ShipmentStatus    @default(CREATED)
+  parcelType      ParcelType
+  weight          Float?
+  note            String?
+
+  receiverName    String
+  receiverPhone   String
+  receiverAddress String?
+
+  senderName    String?
+  senderPhone   String?
+  senderAddress String?
+
+  crossBorderFee Int
+  domesticFee    Int?
+  codAmount      Int?
+  codStatus      CodStatus       @default(NONE)
+  lastMileMethod LastMileMethod?
+
+  createdBy   User   @relation(fields: [createdById], references: [id])
+  createdById String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  events ShipmentEvent[]
+  photos ShipmentPhoto[]
+  
+  customer    Customer? @relation(fields: [customerId], references: [id])
+  customerId  String?
+}
+
+model Customer {
+  id             String   @id @default(cuid())
+  code           String   @unique
+  name           String
+  phone          String   @unique
+  lineId         String?
+  defaultAddress String?
+  points         Int      @default(0)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  shipments      Shipment[]
+}
+
+model ShipmentEvent {
+  id          String         @id @default(cuid())
+  shipment    Shipment       @relation(fields: [shipmentId], references: [id], onDelete: Cascade)
+  shipmentId  String
+  status      ShipmentStatus
+  location    String?
+  notes       String?
+  createdBy   User           @relation(fields: [createdById], references: [id])
+  createdById String
+  createdAt   DateTime       @default(now())
+
+  @@index([shipmentId])
+}
+
+model Settings {
+  id                   String   @id @default("default")
+  defaultCrossBorderFee Int     @default(50000)
+  defaultDomesticFee    Int     @default(20000)
+  trackingPrefixTH      String  @default("TH")
+  trackingPrefixLA      String  @default("LA")
+  companyName           String  @default("Thai-Lao Logistics")
+  companyPhone          String  @default("")
+  companyAddress        String  @default("")
+  updatedAt             DateTime @updatedAt
+}
+
+enum PhotoType {
+  RECEIVED
+  DELIVERED
+  SIGNATURE
+  OTHER
+}
+
+model ShipmentPhoto {
+  id          String    @id @default(cuid())
+  shipment    Shipment  @relation(fields: [shipmentId], references: [id], onDelete: Cascade)
+  shipmentId  String
+  type        PhotoType @default(OTHER)
+  url         String
+  notes       String?
+  createdAt   DateTime  @default(now())
+
+  @@index([shipmentId])
+}
