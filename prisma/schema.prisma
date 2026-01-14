@@ -38,6 +38,7 @@ enum ShipmentStatus {
 
 enum ParcelType {
   DOCUMENT
+  PARCEL
   PACKAGE
   FRAGILE
 }
@@ -47,6 +48,7 @@ enum CodStatus {
   PENDING
   COLLECTED
   TRANSFERRED
+  REMITTED
 }
 
 enum LastMileMethod {
