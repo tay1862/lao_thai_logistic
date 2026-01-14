@@ -15,6 +15,7 @@ import { PARCEL_TYPE_LABELS, generateTrackingNumber } from '@/lib/constants';
 import { createShipment } from '@/lib/api-client';
 import { PhotoCapture } from '@/components/shipments/photo-capture';
 import { Camera } from 'lucide-react';
+import { toast } from 'sonner';
 
 export default function CreateShipmentLAtoTH() {
     const router = useRouter();
@@ -69,9 +70,13 @@ export default function CreateShipmentLAtoTH() {
         // Try API call
         const result = await createShipment(data);
 
-        // For demo, always show success
-        setCreatedTracking(result.data?.companyTracking || companyTracking);
-        setSuccess(true);
+        if (result.success) {
+            setCreatedTracking(result.data?.companyTracking || companyTracking);
+            setSuccess(true);
+            toast.success('ສ້າງພັດສະດຸສຳເລັດ');
+        } else {
+            toast.error(result.error || 'ເກີດຂໍ້ຜິດພາດໃນການສ້າງພັດສະດຸ');
+        }
         setIsLoading(false);
     };
 

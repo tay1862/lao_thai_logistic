@@ -57,6 +57,7 @@ async function fetchApi<T>(
         const response = await fetch(`${API_BASE}${endpoint}`, {
             ...options,
             headers,
+            cache: 'no-store', // Disable caching for API calls
         });
 
         const data = await response.json();

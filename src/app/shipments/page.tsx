@@ -15,6 +15,7 @@ import { StatusBadge } from '@/components/shipments/status-badge';
 import { Shipment, ShipmentFilters } from '@/types';
 import { formatLAK, formatDateTime, STATUS_LABELS } from '@/lib/constants';
 import { getShipments, getAuthToken } from '@/lib/api-client';
+import { toast } from 'sonner';
 
 export default function ShipmentsListPage() {
     const router = useRouter();
@@ -38,6 +39,8 @@ export default function ShipmentsListPage() {
         if (result.success && result.data) {
             setShipments(result.data.shipments);
             setTotal(result.data.total);
+        } else if (!result.success) {
+            toast.error(result.error || 'ບໍ່ສາມາດໂຫລດຂໍ້ມູນພັດສະດຸໄດ້');
         }
 
         setIsLoading(false);

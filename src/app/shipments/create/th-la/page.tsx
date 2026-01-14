@@ -59,9 +59,13 @@ export default function CreateShipmentTHtoLA() {
         // Try API call
         const result = await createShipment(data);
 
-        // For demo, always show success
-        setCreatedTracking(result.data?.companyTracking || companyTracking);
-        setSuccess(true);
+        if (result.success) {
+            setCreatedTracking(result.data?.companyTracking || companyTracking);
+            setSuccess(true);
+            toast.success('ສ້າງພັດສະດຸສຳເລັດ');
+        } else {
+            toast.error(result.error || 'ເກີດຂໍ້ຜິດພາດໃນການສ້າງພັດສະດຸ');
+        }
         setIsLoading(false);
     };
 
