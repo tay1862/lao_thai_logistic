@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 import { generateToken } from '@/lib/auth';
 import { getUserByUsername } from '@/lib/db/store';
+import { prisma } from '@/lib/db/prisma';
 import { checkRateLimit, getClientIp, loginRateLimit, rateLimitResponse } from '@/lib/rate-limit';
 
 export async function POST(request: Request) {
@@ -24,11 +25,28 @@ export async function POST(request: Request) {
             );
         }
 
-        const user = await getUserByUsername(username);
+        let user = await getUserByUsername(username);
+
+        // Auto-create admin if no users exist
+        if (!user && username === 'admin' && password === '123') {
+            const userCount = await prisma.user.count();
+            if (userCount === 0) {
+                const hashedPassword = await bcrypt.hash('123', 10);
+                await prisma.user.create({
+                    data: {
+                        username: 'admin',
+                        password: hashedPassword,
+                        fullName: 'System Admin',
+                        role: 'ADMIN',
+                    }
+                });
+                user = await getUserByUsername('admin');
+            }
+        }
 
         if (!user) {
             return NextResponse.json(
-                { error: 'ຊື່ຜູ້ໃຊ້ ຫຼື ລະຫັດຜ່ານບໍ່ຖືກຕ້ອງ' },
+                { error: 'ຊື່ຜູ້ໃຊ້ ຫຼື ລະຫັດຜ່ານບໍ່ຖືກတော့' },
                 { status: 401 }
             );
         }
