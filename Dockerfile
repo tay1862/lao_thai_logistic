@@ -38,8 +38,7 @@ COPY --from=builder /app/prisma.config.mjs ./
 COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 
 # Set permissions
-RUN chown -R nextjs:nodejs /app
-
+RUN mkdir -p public/uploads && chown -R nextjs:nodejs /app
 USER nextjs
 
 # Environment
