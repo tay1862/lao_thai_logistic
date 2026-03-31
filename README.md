@@ -76,6 +76,8 @@ Detailed runbook: `docs/runbooks/db-backup-restore.md`
 
 Production release checklist: `docs/runbooks/production-release-checklist.md`
 
+Rollback quick reference: `docs/runbooks/rollback-quick-reference.md`
+
 ## CI
 
 GitHub Actions workflow is configured in `.github/workflows/ci.yml` to run `npm run test:all` on every pull request.
