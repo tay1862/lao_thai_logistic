@@ -1,0 +1,286 @@
+generator client {
+  provider = "prisma-client-js"
+  engineType = "binary"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Country {
+  TH
+  LA
+}
+
+enum Currency {
+  THB
+  LAK
+}
+
+enum UserRole {
+  admin
+  manager
+  staff
+}
+
+enum UserStatus {
+  active
+  inactive
+}
+
+enum ShipmentStatus {
+  received
+  in_transit
+  arrived_hub
+  out_for_delivery
+  delivered
+  failed_delivery
+  return_in_transit
+  returned
+  cancelled
+}
+
+enum PriceType {
+  calculated
+  manual
+}
+
+enum ShippingPartner {
+  internal
+  thailand_post
+  lao_post
+  flash
+  jnt
+  kerry
+  other
+}
+
+enum CodStatus {
+  pending
+  collected
+  pending_transfer
+  transferred
+  cancelled
+}
+
+enum EventType {
+  status_change
+  note
+  photo
+  exception
+}
+
+enum CustomerType {
+  individual
+  company
+}
+
+model Customer {
+  id           String      @id @default(cuid())
+  customerType CustomerType @default(individual)
+  firstname    String
+  lastname     String
+  phone        String      @unique
+  address      String?
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  sentShipments     Shipment[] @relation("SenderShipments")
+  receivedShipments Shipment[] @relation("ReceiverShipments")
+
+  @@index([firstname])
+  @@index([lastname])
+  @@index([createdAt])
+}
+
+model Branch {
+  id          String    @id @default(cuid())
+  branchName  String
+  country     Country
+  currency    Currency
+  location    String?
+  tel         String?
+  description String?
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  users                User[]
+  originShipments      Shipment[]    @relation("OriginBranchShipments")
+  destinationShipments Shipment[]    @relation("DestinationBranchShipments")
+  codTransactions      CodTransaction[]
+  originPrices         PriceConfig[] @relation("OriginBranchPrices")
+  destinationPrices    PriceConfig[] @relation("DestinationBranchPrices")
+
+  @@index([country])
+  @@index([isActive])
+}
+
+model User {
+  id           String     @id @default(cuid())
+  firstname    String
+  lastname     String
+  email        String     @unique
+  passwordHash String
+  role         UserRole
+  status       UserStatus @default(active)
+  branchId     String?
+  createdById  String?
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  branch               Branch?          @relation(fields: [branchId], references: [id])
+  createdBy            User?            @relation("UserCreatedBy", fields: [createdById], references: [id])
+  createdUsers         User[]           @relation("UserCreatedBy")
+  createdShipments     Shipment[]       @relation("ShipmentCreatedBy")
+  shipmentEvents       ShipmentEvent[]
+  collectedCods        CodTransaction[] @relation("CodCollectedBy")
+  transferredCods      CodTransaction[] @relation("CodTransferredBy")
+  auditLogs            AuditLog[]
+  createdPriceConfigs  PriceConfig[]    @relation("PriceConfigCreatedBy")
+
+  @@index([role])
+  @@index([status])
+  @@index([branchId])
+}
+
+model PriceConfig {
+  id                  String    @id @default(cuid())
+  originBranchId      String
+  destinationBranchId String
+  currency            Currency
+  basePrice           Float
+  pricePerKg          Float
+  minWeightKg         Float     @default(0.5)
+  effectiveFrom       DateTime
+  note                String?
+  isActive            Boolean   @default(true)
+  createdById         String
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
+  originBranch      Branch @relation("OriginBranchPrices", fields: [originBranchId], references: [id])
+  destinationBranch Branch @relation("DestinationBranchPrices", fields: [destinationBranchId], references: [id])
+  createdBy         User   @relation("PriceConfigCreatedBy", fields: [createdById], references: [id])
+
+  @@index([originBranchId, destinationBranchId, effectiveFrom])
+  @@index([isActive])
+}
+
+model Shipment {
+  id                  String         @id @default(cuid())
+  trackingNo          String         @unique
+  externalTrackingNo  String?
+  shippingPartner     ShippingPartner?
+  status              ShipmentStatus @default(received)
+
+  senderId            String
+  receiverId          String
+  createdById         String
+  originBranchId      String
+  destinationBranchId String
+
+  weightKg            Float
+  dimensions          String?
+  currency            Currency
+  price               Float
+  priceType           PriceType
+  manualPriceNote     String?
+
+  cod                 Boolean        @default(false)
+  codAmount           Float          @default(0)
+  deliveryAttempts    Int            @default(0)
+
+  itemDescription     String?
+  photoPath           String?
+
+  createdAt           DateTime       @default(now())
+  updatedAt           DateTime       @updatedAt
+
+  sender              Customer       @relation("SenderShipments", fields: [senderId], references: [id])
+  receiver            Customer       @relation("ReceiverShipments", fields: [receiverId], references: [id])
+  createdBy           User           @relation("ShipmentCreatedBy", fields: [createdById], references: [id])
+  originBranch        Branch         @relation("OriginBranchShipments", fields: [originBranchId], references: [id])
+  destinationBranch   Branch         @relation("DestinationBranchShipments", fields: [destinationBranchId], references: [id])
+  events              ShipmentEvent[]
+  codTransaction      CodTransaction?
+
+  @@index([status])
+  @@index([createdAt])
+  @@index([originBranchId])
+  @@index([destinationBranchId])
+  @@index([senderId])
+  @@index([receiverId])
+  @@index([createdById])
+  @@index([cod])
+  @@index([codAmount])
+  @@index([status, createdAt])
+  @@index([originBranchId, status])
+  @@index([destinationBranchId, status])
+  @@index([externalTrackingNo])
+}
+
+model ShipmentEvent {
+  id            String         @id @default(cuid())
+  shipmentId    String
+  eventType     EventType
+  status        ShipmentStatus?
+  location      String?
+  note          String?
+  performedById String
+  createdAt     DateTime       @default(now())
+
+  shipment      Shipment       @relation(fields: [shipmentId], references: [id], onDelete: Cascade)
+  performedBy   User           @relation(fields: [performedById], references: [id])
+
+  @@index([shipmentId, createdAt])
+  @@index([eventType])
+  @@index([status])
+  @@index([performedById])
+}
+
+model CodTransaction {
+  id              String    @id @default(cuid())
+  shipmentId      String    @unique
+  currency        Currency
+  expectedAmount  Float
+  collectedAmount Float?
+  discrepancyNote String?
+  status          CodStatus @default(pending)
+  branchId        String
+  collectedById   String?
+  transferredById String?
+  collectedAt     DateTime?
+  transferredAt   DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  shipment      Shipment @relation(fields: [shipmentId], references: [id], onDelete: Cascade)
+  branch        Branch   @relation(fields: [branchId], references: [id])
+  collectedBy   User?    @relation("CodCollectedBy", fields: [collectedById], references: [id])
+  transferredBy User?    @relation("CodTransferredBy", fields: [transferredById], references: [id])
+
+  @@index([status])
+  @@index([branchId])
+  @@index([collectedAt])
+  @@index([transferredAt])
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  userId     String
+  action     String
+  entityType String
+  entityId   String
+  oldData    Json?
+  newData    Json?
+  ipAddress  String?
+  createdAt  DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([action])
+  @@index([entityType, entityId])
+  @@index([createdAt])
+}

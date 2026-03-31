@@ -49,38 +49,49 @@
 }
 
 :root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
+  /* ── Ocean Blue Brand Palette ── */
+  --brand-primary: #1558B0;
+  --brand-primary-light: #1D70D8;
+  --brand-primary-dark: #0D3F85;
+  --brand-accent: #38BDF8;
+  --brand-success: #16A34A;
+  --brand-warning: #D97706;
+  --brand-danger: #DC2626;
+  --brand-bg: #F0F7FF;
+  --brand-border: #BFDBFE;
+
+  --background: oklch(0.973 0.01 240);      /* #F0F7FF blue-tinted */
+  --foreground: oklch(0.1 0.02 245);        /* #0F172A */
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
+  --card-foreground: oklch(0.1 0.02 245);
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
+  --popover-foreground: oklch(0.1 0.02 245);
+  --primary: oklch(0.42 0.16 248);          /* #1558B0 Ocean Blue */
+  --primary-foreground: oklch(1 0 0);
+  --secondary: oklch(0.94 0.03 240);
+  --secondary-foreground: oklch(0.25 0.05 248);
+  --muted: oklch(0.94 0.02 240);
+  --muted-foreground: oklch(0.44 0.04 248); /* #475569 */
+  --accent: oklch(0.68 0.14 220);           /* #38BDF8 sky */
+  --accent-foreground: oklch(0.1 0.02 245);
+  --destructive: oklch(0.5 0.22 27);        /* #DC2626 */
+  --border: oklch(0.84 0.06 240);           /* #BFDBFE */
+  --input: oklch(0.84 0.06 240);
+  --ring: oklch(0.42 0.16 248);
+  --chart-1: oklch(0.42 0.16 248);
+  --chart-2: oklch(0.52 0.16 180);
+  --chart-3: oklch(0.62 0.18 145);
+  --chart-4: oklch(0.7 0.18 55);
+  --chart-5: oklch(0.55 0.2 27);
   --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  --sidebar: oklch(0.28 0.08 248);          /* #0D3F85 dark navy */
+  --sidebar-foreground: oklch(0.97 0.01 240);
+  --sidebar-primary: oklch(0.42 0.16 248);
+  --sidebar-primary-foreground: oklch(1 0 0);
+  --sidebar-accent: oklch(0.35 0.1 248);
+  --sidebar-accent-foreground: oklch(0.97 0.01 240);
+  --sidebar-border: oklch(0.3 0.08 248);
+  --sidebar-ring: oklch(0.68 0.14 220);
 }
 
 .dark {
@@ -127,4 +138,33 @@
   html {
     @apply font-sans;
   }
+}
+
+@layer utilities {
+  /* Minimum 44px tap target for mobile */
+  .touch-target {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  /* Status badge colors */
+  .status-received        { @apply bg-blue-100 text-blue-800; }
+  .status-in_transit      { @apply bg-indigo-100 text-indigo-800; }
+  .status-arrived_hub     { @apply bg-violet-100 text-violet-800; }
+  .status-out_for_delivery { @apply bg-amber-100 text-amber-800; }
+  .status-delivered       { @apply bg-green-100 text-green-800; }
+  .status-failed_delivery { @apply bg-red-100 text-red-800; }
+  .status-return_in_transit { @apply bg-orange-100 text-orange-700; }
+  .status-returned        { @apply bg-gray-100 text-gray-700; }
+  .status-cancelled       { @apply bg-gray-100 text-gray-500 line-through; }
+
+  /* COD status */
+  .cod-pending            { @apply bg-yellow-100 text-yellow-800; }
+  .cod-collected          { @apply bg-blue-100 text-blue-800; }
+  .cod-pending_transfer   { @apply bg-orange-100 text-orange-800; }
+  .cod-transferred        { @apply bg-green-100 text-green-800; }
+  .cod-cancelled          { @apply bg-gray-100 text-gray-500; }
+
+  /* Content visibility for long lists */
+  .cv-auto { content-visibility: auto; contain-intrinsic-size: 0 80px; }
 }
