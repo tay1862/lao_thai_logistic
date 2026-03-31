@@ -1,36 +1,81 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Thai-Lao Logistics
 
-## Getting Started
+Production-oriented logistics web application built with Next.js App Router, Prisma, and PostgreSQL.
 
-First, run the development server:
+## Core Commands
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm run build
+npm run start
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Test Commands
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+npm run test:seed
+npm run test:api
+npm run test:e2e
+npm run test:all
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Monitoring and Alerting
 
-## Learn More
+### Sentry
 
-To learn more about Next.js, take a look at the following resources:
+Sentry is wired for server, edge, and browser runtime.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Set these variables in your environment:
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```bash
+NEXT_PUBLIC_SENTRY_DSN=
+SENTRY_DSN=
+SENTRY_ORG=
+SENTRY_PROJECT=
+SENTRY_AUTH_TOKEN=
+SENTRY_ENVIRONMENT=development
+```
 
-## Deploy on Vercel
+When DSN values are empty, Sentry initialization is automatically disabled.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+### Log Aggregation (Loki + Promtail + Grafana)
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Observability stack files are in `observability/`.
+
+Start stack:
+
+```bash
+docker compose -f observability/docker-compose.observability.yml up -d
+```
+
+Access Grafana at `http://localhost:3001`.
+Default credentials:
+
+- user: `admin`
+- password: `admin`
+
+Alert baseline runbook: `docs/runbooks/observability-alert-baseline.md`
+
+## Database Backup and Restore
+
+Run backup:
+
+```bash
+npm run backup:db
+```
+
+Restore from dump:
+
+```bash
+npm run restore:db -- ./backups/<file>.dump
+```
+
+Detailed runbook: `docs/runbooks/db-backup-restore.md`
+
+## Release Process
+
+Production release checklist: `docs/runbooks/production-release-checklist.md`
+
+## CI
+
+GitHub Actions workflow is configured in `.github/workflows/ci.yml` to run `npm run test:all` on every pull request.
