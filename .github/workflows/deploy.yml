@@ -1,0 +1,121 @@
+name: Deploy to VPS
+
+# Runs after every push to main (i.e. after a PR merge)
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+env:
+  REGISTRY: ghcr.io
+  # ghcr.io/owner/repo  (lowercased automatically by metadata-action)
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  # ── 1. Build Docker image and push to GitHub Container Registry ─────────────
+  build:
+    name: Build & push image
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      image: ${{ steps.meta.outputs.tags }}
+      version: sha-${{ github.sha }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata (tags + labels)
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ env.IMAGE_NAME }}
+          tags: |
+            type=sha,prefix=sha-
+            type=raw,value=latest
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # ── 2. Deploy to VPS ─────────────────────────────────────────────────────────
+  deploy:
+    name: Deploy to VPS
+    needs: build
+    runs-on: ubuntu-latest
+    environment: production   # optional: add required reviewers in GitHub settings
+
+    steps:
+      - name: Checkout (for compose files + nginx conf)
+        uses: actions/checkout@v4
+
+      # Copy only the files VPS needs (not source code — image handles that)
+      - name: Sync config files to VPS
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ secrets.VPS_PORT || 22 }}
+          source: "docker-compose.prod.yml,nginx/nginx.conf,prisma/migrations"
+          target: /opt/tll
+          strip_components: 0
+
+      - name: Pull image + restart containers
+        uses: appleboy/ssh-action@v1.0.3
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_ACTOR: ${{ github.actor }}
+          NEW_IMAGE: ghcr.io/${{ env.IMAGE_NAME }}:sha-${{ github.sha }}
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ secrets.VPS_PORT || 22 }}
+          envs: GH_TOKEN,GH_ACTOR,NEW_IMAGE
+          script: |
+            set -e
+            cd /opt/tll
+
+            # Authenticate to GHCR (token valid for this workflow run)
+            echo "$GH_TOKEN" | docker login ghcr.io -u "$GH_ACTOR" --password-stdin
+
+            # Update WEB_IMAGE in .env
+            if grep -q '^WEB_IMAGE=' .env; then
+              sed -i "s|^WEB_IMAGE=.*|WEB_IMAGE=${NEW_IMAGE}|" .env
+            else
+              echo "WEB_IMAGE=${NEW_IMAGE}" >> .env
+            fi
+
+            # Pull the new image (fast — only changed layers)
+            docker compose -f docker-compose.prod.yml pull web
+
+            # Restart web container with zero-downtime (db and nginx stay up)
+            docker compose -f docker-compose.prod.yml up -d --no-build --remove-orphans web
+
+            # Apply any new Prisma migrations (safe to run when no migrations pending)
+            docker compose -f docker-compose.prod.yml exec -T web \
+              npx prisma migrate deploy
+
+            # Remove dangling images to reclaim disk
+            docker image prune -f
+
+            echo "✅ Deployed: $(echo "$NEW_IMAGE" | grep -oP 'sha-\K[a-f0-9]+')"
